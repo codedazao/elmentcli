@@ -5,10 +5,13 @@ import common.Pr;
 import pojo.Customer;
 import pojo.Shop;
 import service.CustomService;
+import service.EnterpriseService;
 import service.ShopService;
 import service.impl.CustomServiceImpl;
+import service.impl.EnterpriseServiceImpl;
 import service.impl.ShopServiceImpl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -21,7 +24,6 @@ public class CustomerViewImpl implements CustomerView {
     }
     @Override
     public void userUI() {
-
         //显示内容 注册，登录，修改
         Pr.prmenu(">>>>>>>>>>用户界面<<<<<<<<<<<<<<");
         Pr.item("1:登录","2:注册","3:修改","4:退出");
@@ -117,7 +119,7 @@ public class CustomerViewImpl implements CustomerView {
     }
     @Override
     public void mainUI() {
-        Pr.item("1.查看用户信息","2.查看购物车","3.查看企业信息","4.购物");
+        Pr.item("1.查看用户信息","2.查看购物车","3.查看企业信息","4.购物","5.企业账户登录","6.企业账户注册");
         int chance = In.getInt();
         if (chance == 1){
             System.out.println(sessionCustomer);
@@ -131,12 +133,54 @@ public class CustomerViewImpl implements CustomerView {
             Pr.printLine("目前上架的商品有");
             ShopService shopService = new ShopServiceImpl();
             shopService.getShops().forEach(System.out::println);
-        }else {
+        } else if (chance == 5) {
+            Pr.printLine("企业账户登录");
+            EnterpriseService enterpriseService = new EnterpriseServiceImpl();
+            Customer customer = enterpriseService.loginEnterPrise(sessionCustomer.getUsername(), sessionCustomer.getPassword());
+            Pr.printLine("已检测您的账户是企业账户，为您自动登录");
+            this.enterpriseUI(customer);
+        } else if (chance == 6) {
+            Pr.printLine("企业账户注册");
+            EnterpriseService enterpriseService = new EnterpriseServiceImpl();
+            enterpriseService.registerEnterpriseAccount(sessionCustomer);
+            Pr.printLine("您的账户已升级为企业账户,现在可以上架货物");
+            String inputString = In.getString();
+            Pr.printLine("输入y返回主界面,输入n退出程序");
+            if (inputString.equals("y")){
+                this.mainUI();
+            }else {
+                return;
+            }
+        } else {
             Pr.printLine("您的输入无效,按y返回主界面,按n退出程序");
             String userInput = In.getString();
             if (userInput.equals("y")){
                 this.mainUI();
             }else if (userInput.equals("n")){
+                return;
+            }
+        }
+    }
+    public void enterpriseUI(Customer customer){
+        Pr.printLine("欢迎登录企业平台"+customer.getUsername());
+        Pr.item("1.上架商品","2.下架商品","3.注销账户","4.更多功能待后续开发");
+        int inputInt = In.getInt();
+        if (inputInt==1){
+            Pr.printLine("上架您的货物,货物之间用逗号(英文)分隔");
+            String groundingGoods = In.getString();
+            String[] split = groundingGoods.split(".");
+            List<Shop> shops = new ArrayList<>();
+            for (int i = 0; i < split.length; i++) {
+                Shop shop = new Shop().setShopName(split[i]);
+                shops.add(shop);
+            }
+            ShopService shopService = new ShopServiceImpl();
+            shopService.groundingShops(shops);
+            Pr.printLine("上架商品成功,按y返回企业界面,按n退出系统");
+            String inputString = In.getString();
+            if (inputString.equals("y")){
+                this.enterpriseUI(sessionCustomer);
+            }else {
                 return;
             }
         }
